@@ -10,7 +10,10 @@
   "main": "dist/jpeg_camera.js",
   "module": "dist/jpeg_camera.js",
   "dependencies": {
-    "auto-bind": "^1.1.0"
+    "auto-bind": "^1.1.0",
+    "filewatcher-webpack-plugin": "^1.2.0",
+    "flex-sdk": "^4.6.0-0",
+    "webpack-shell-plugin": "^0.5.0"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",

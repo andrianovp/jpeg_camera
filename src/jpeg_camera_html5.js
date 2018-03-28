@@ -127,7 +127,7 @@ export default class JpegCameraHtml5 extends JpegCameraBase {
       video: {
         width: {
           min: 640,
-          ideal: 3840,
+          ideal: this.options.resolution,
         },
       },
       audio: false,
