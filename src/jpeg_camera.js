@@ -322,8 +322,6 @@ export default class JpegCameraBase {
     this.videoWidth = videoWidth;
     this.videoHeight = videoHeight;
 
-    this.debug(`Camera resolution ${this.videoWidth}x${this.videoHeight}px`);
-
     // XXX Since this method is called from inside the Flash object, we need to
     // return control to make flash object usable again.
     const that = this;

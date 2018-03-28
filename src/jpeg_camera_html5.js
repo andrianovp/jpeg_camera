@@ -49,16 +49,21 @@ export default class JpegCameraHtml5 extends JpegCameraBase {
       if (navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ video: true })
           .then((stream) => {
-            success(stream);
+            const tracks = stream.getVideoTracks();
+            if (tracks[0]) {
+              tracks[0].stop();
+              success();
+            }
+            failure();
           })
-          .catch((err) => {
-            failure(err);
+          .catch(() => {
+            failure();
           });
       } else {
-        navigator.getUserMedia({ video: true }, success, failure);
+        failure();
       }
     } catch (err) {
-      failure('getUserMedia could not be initialised.', err);
+      failure();
     }
   }
 
@@ -117,86 +122,28 @@ export default class JpegCameraHtml5 extends JpegCameraBase {
 
         return this.waitForVideoReady();
       };
-    const failure =
-      (err) => {
-        throw new WebcamError(WebcamErrors.UNKNOWN_ERROR, err);
-      };
 
-    const resolutionsToCheck = [
-      [3840, 2160],
-      [1920, 1080],
-      [1600, 1200],
-      [1280, 720],
-      [960, 720],
-      [800, 600],
-      [640, 480],
-      [640, 360],
-    ];
-
-    const resolutionFinder = (resolutions) => {
-      const res = resolutions.shift();
-      this.tryResolution(
-        res[0],
-        res[1],
-        (stream) => {
-          if (!this.stream) {
-            success(stream);
-          }
+    navigator.mediaDevices.getUserMedia({
+      video: {
+        width: {
+          min: 640,
+          ideal: 3840,
         },
-        () => {
-          if (resolutions.length !== 0) {
-            resolutionFinder(resolutions);
-          } else {
-            failure('Could not find suitable webcam resolution.');
-          }
-        },
-      );
-    };
-
-    try {
-      resolutionFinder(resolutionsToCheck);
-    } catch (error) {
-      this.message.innerHTML = '';
-      throw new WebcamError(WebcamErrors.GET_MEDIA_FAILED_INIT, error);
-    }
-  }
-
-  tryResolution(width, height, success, failure) {
-    // eslint-disable-next-line no-console
-    console.log(`Webcam trying ${width}x${height}`);
-    if (navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia(
-        {
-          video: {
-            width: { exact: width },
-            height: { exact: height },
-          },
-          audio: false,
-        },
-      )
-        .then((stream) => {
+      },
+      audio: false,
+    })
+      .then((stream) => {
+        if (!this.stream) {
+          const tracks = stream.getVideoTracks();
+          const settings = tracks[0].getSettings();
+          this.debug(`Camera resolution ${settings.width}x${settings.height}px`);
           success(stream);
-        })
-        .catch((err) => {
-          failure(err);
-        });
-    } else {
-      navigator.getUserMedia(
-        {
-          video: {
-            mandatory: {
-              minWidth: width,
-              minHeight: height,
-              maxWidth: width,
-              maxHeight: height,
-            },
-          },
-          audio: false,
-        },
-        success.bind(this),
-        failure.bind(this),
-      );
-    }
+        }
+      })
+      .catch((error) => {
+        this.message.innerHTML = '';
+        throw new WebcamError(WebcamErrors.GET_MEDIA_FAILED_INIT, error);
+      });
   }
 
   resizePreview() {

@@ -514,8 +514,6 @@ var JpegCameraBase = function () {
       this.videoWidth = videoWidth;
       this.videoHeight = videoHeight;
 
-      this.debug('Camera resolution ' + this.videoWidth + 'x' + this.videoHeight + 'px');
-
       // XXX Since this method is called from inside the Flash object, we need to
       // return control to make flash object usable again.
       var that = this;
@@ -843,64 +841,26 @@ var JpegCameraHtml5 = function (_JpegCameraBase) {
 
         return _this2.waitForVideoReady();
       };
-      var failure = function failure(err) {
-        throw new _errors.WebcamError(_errors.WebcamErrors.UNKNOWN_ERROR, err);
-      };
 
-      var resolutionsToCheck = [[3840, 2160], [1920, 1080], [1600, 1200], [1280, 720], [960, 720], [800, 600], [640, 480], [640, 360]];
-
-      var resolutionFinder = function resolutionFinder(resolutions) {
-        var res = resolutions.shift();
-        _this2.tryResolution(res[0], res[1], function (stream) {
-          if (!_this2.stream) {
-            success(stream);
+      navigator.mediaDevices.getUserMedia({
+        video: {
+          width: {
+            min: 640,
+            ideal: 3840
           }
-        }, function () {
-          if (resolutions.length !== 0) {
-            resolutionFinder(resolutions);
-          } else {
-            failure('Could not find suitable webcam resolution.');
-          }
-        });
-      };
-
-      try {
-        resolutionFinder(resolutionsToCheck);
-      } catch (error) {
-        this.message.innerHTML = '';
-        throw new _errors.WebcamError(_errors.WebcamErrors.GET_MEDIA_FAILED_INIT, error);
-      }
-    }
-  }, {
-    key: 'tryResolution',
-    value: function tryResolution(width, height, success, failure) {
-      // eslint-disable-next-line no-console
-      console.log('Webcam trying ' + width + 'x' + height);
-      if (navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { exact: width },
-            height: { exact: height }
-          },
-          audio: false
-        }).then(function (stream) {
+        },
+        audio: false
+      }).then(function (stream) {
+        if (!_this2.stream) {
+          var tracks = stream.getVideoTracks();
+          var settings = tracks[0].getSettings();
+          _this2.debug('Camera resolution ' + settings.width + 'x' + settings.height + 'px');
           success(stream);
-        }).catch(function (err) {
-          failure(err);
-        });
-      } else {
-        navigator.getUserMedia({
-          video: {
-            mandatory: {
-              minWidth: width,
-              minHeight: height,
-              maxWidth: width,
-              maxHeight: height
-            }
-          },
-          audio: false
-        }, success.bind(this), failure.bind(this));
-      }
+        }
+      }).catch(function (error) {
+        _this2.message.innerHTML = '';
+        throw new _errors.WebcamError(_errors.WebcamErrors.GET_MEDIA_FAILED_INIT, error);
+      });
     }
   }, {
     key: 'resizePreview',
@@ -1158,15 +1118,20 @@ JpegCameraHtml5.engineCheck = function (success, failure) {
   try {
     if (navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
-        success(stream);
-      }).catch(function (err) {
-        failure(err);
+        var tracks = stream.getVideoTracks();
+        if (tracks[0]) {
+          tracks[0].stop();
+          success();
+        }
+        failure();
+      }).catch(function () {
+        failure();
       });
     } else {
-      navigator.getUserMedia({ video: true }, success, failure);
+      failure();
     }
   } catch (err) {
-    failure('getUserMedia could not be initialised.', err);
+    failure();
   }
 };
 
