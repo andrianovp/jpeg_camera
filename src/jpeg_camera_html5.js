@@ -46,22 +46,17 @@ export default class JpegCameraHtml5 extends JpegCameraBase {
       failure('JpegCamera: Canvas-to-Blob is not loaded');
     }
     try {
-      if (navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true })
-          .then((stream) => {
-            const tracks = stream.getVideoTracks();
-            if (tracks[0]) {
-              tracks[0].stop();
-              success();
-            }
+      navigator.mediaDevices.enumerateDevices()
+        .then((devices) => {
+          if (devices) {
+            success();
+          } else {
             failure();
-          })
-          .catch(() => {
-            failure();
-          });
-      } else {
-        failure();
-      }
+          }
+        })
+        .catch(() => {
+          failure();
+        });
     } catch (err) {
       failure();
     }

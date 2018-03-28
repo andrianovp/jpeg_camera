@@ -289,7 +289,8 @@ var JpegCameraBase = function () {
       mirror: false,
       previewMirror: true,
       scale: 1.0,
-      accessMessage: 'Please allow camera access when prompted by the browser.<br><br>' + 'Look for camera icon around your address bar.'
+      accessMessage: 'Please allow camera access when prompted by the browser.<br><br>' + 'Look for camera icon around your address bar.',
+      dontCheckFlash: false
     };
     this.isReady = false;
     this.errorOccured = false;
@@ -689,19 +690,13 @@ var JpegCamera = function JpegCamera(container, options) {
     options.onInit(html5Init());
   },
   /* failure */function () {
-    if (options.dontCheckFlash) {
-      /* skip checking for flash and just run it */
+    _jpeg_camera_flash2.default.engineCheck(
+    /* success */function () {
       options.onInit(flashInit());
-    } else {
-      /* do check for flash in correct version */
-      _jpeg_camera_flash2.default.engineCheck(
-      /* success */function () {
-        options.onInit(flashInit());
-      },
-      /* failure */function () {
-        if (options.onError) options.onError(initError());
-      });
-    }
+    },
+    /* failure */function () {
+      if (options.onError) options.onError(initError());
+    });
   });
 };
 
@@ -1119,20 +1114,15 @@ JpegCameraHtml5.engineCheck = function (success, failure) {
     failure('JpegCamera: Canvas-to-Blob is not loaded');
   }
   try {
-    if (navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
-        var tracks = stream.getVideoTracks();
-        if (tracks[0]) {
-          tracks[0].stop();
-          success();
-        }
+    navigator.mediaDevices.enumerateDevices().then(function (devices) {
+      if (devices) {
+        success();
+      } else {
         failure();
-      }).catch(function () {
-        failure();
-      });
-    } else {
+      }
+    }).catch(function () {
       failure();
-    }
+    });
   } catch (err) {
     failure();
   }
@@ -1682,7 +1672,7 @@ var JpegCameraFlash = function (_JpegCameraBase) {
       this.container.appendChild(containerToBeReplaced);
 
       // eslint-disable-next-line no-undef
-      swfobject.embedSWF(this.options.swfUrl, containerToBeReplaced.id, this.viewWidth, this.viewHeight, this.options.dontCheckFlash ? '0' : '9', null, flashvars, params, attributes, callback);
+      swfobject.embedSWF(this.options.swfUrl, containerToBeReplaced.id, this.viewWidth, this.viewHeight, '0', null, flashvars, params, attributes, callback);
     }
   }, {
     key: 'waitForVideoReady',
@@ -1842,9 +1832,10 @@ JpegCameraFlash.engineCheck = function (success, failure) {
   if (!window.swfobject) {
     failure('JpegCamera: SWFObject is not loaded.');
   }
-  if (!window.swfobject.hasFlashPlayerVersion('9')) {
-    failure('No Flash in version 9 available.');
-  }
+  // TODO disabled until I figure out how to detect flash cross-browser way
+  // if (!window.swfobject.hasFlashPlayerVersion('9')) {
+  //   failure('No Flash in version 9 available.');
+  // }
   success();
 };
 

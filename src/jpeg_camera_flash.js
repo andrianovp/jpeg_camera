@@ -32,9 +32,10 @@ export default class JpegCameraFlash extends JpegCameraBase {
     if (!window.swfobject) {
       failure('JpegCamera: SWFObject is not loaded.');
     }
-    if (!window.swfobject.hasFlashPlayerVersion('9')) {
-      failure('No Flash in version 9 available.');
-    }
+    // TODO disabled until I figure out how to detect flash cross-browser way
+    // if (!window.swfobject.hasFlashPlayerVersion('9')) {
+    //   failure('No Flash in version 9 available.');
+    // }
     success();
   }
 
@@ -94,7 +95,7 @@ export default class JpegCameraFlash extends JpegCameraBase {
       containerToBeReplaced.id,
       this.viewWidth,
       this.viewHeight,
-      this.options.dontCheckFlash ? '0' : '9',
+      '0',
       null,
       flashvars,
       params,
