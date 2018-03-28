@@ -41,8 +41,7 @@ export default class JpegCameraBase {
     scale: 1.0,
     accessMessage:
       'Please allow camera access when prompted by the browser.<br><br>' +
-      'Look for camera icon around your address bar.',
-    dontCheckFlash: false,
+      'Look for camera icon around your address bar.'
   };
 
   // @nodoc

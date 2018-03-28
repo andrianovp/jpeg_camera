@@ -289,8 +289,7 @@ var JpegCameraBase = function () {
       mirror: false,
       previewMirror: true,
       scale: 1.0,
-      accessMessage: 'Please allow camera access when prompted by the browser.<br><br>' + 'Look for camera icon around your address bar.',
-      dontCheckFlash: false
+      accessMessage: 'Please allow camera access when prompted by the browser.<br><br>' + 'Look for camera icon around your address bar.'
     };
     this.isReady = false;
     this.errorOccured = false;
