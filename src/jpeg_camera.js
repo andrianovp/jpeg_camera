@@ -33,6 +33,7 @@ export default class JpegCameraBase {
       if (console && console.log) { return console.log(`JpegCamera: ${message}`); }
       return null;
     },
+    resolution: 3840,
     quality: 0.9,
     shutter: true,
     mirror: false,
@@ -40,7 +41,7 @@ export default class JpegCameraBase {
     scale: 1.0,
     accessMessage:
       'Please allow camera access when prompted by the browser.<br><br>' +
-      'Look for camera icon around your address bar.',
+      'Look for camera icon around your address bar.'
   };
 
   // @nodoc
@@ -125,6 +126,8 @@ export default class JpegCameraBase {
   //   message will be passed as the first argument. Inside the callback camera
   //   object can be accessed as `this`. There is a default implementation of
   //   this callback that logs messages to window.console if available.
+  // @option options resolution [Number] The horizontal resolution to ask camera for when
+  //   initialising. Camera will be initialised at closest allowed horizontal resolution.
   // @option options quality [Float] Quality of the JPEG file that will be
   //   uploaded to the server. Should be between 0 and 1. 0.9 by default. Can be
   //   overwritten when calling {JpegCamera#capture capture}. _Cannot_ be
@@ -321,8 +324,6 @@ export default class JpegCameraBase {
   prepared(videoWidth, videoHeight) {
     this.videoWidth = videoWidth;
     this.videoHeight = videoHeight;
-
-    this.debug(`Camera resolution ${this.videoWidth}x${this.videoHeight}px`);
 
     // XXX Since this method is called from inside the Flash object, we need to
     // return control to make flash object usable again.

@@ -230,6 +230,8 @@ var JpegCameraBase = function () {
     //   message will be passed as the first argument. Inside the callback camera
     //   object can be accessed as `this`. There is a default implementation of
     //   this callback that logs messages to window.console if available.
+    // @option options resolution [Number] The horizontal resolution to ask camera for when
+    //   initialising. Camera will be initialised at closest allowed horizontal resolution.
     // @option options quality [Float] Quality of the JPEG file that will be
     //   uploaded to the server. Should be between 0 and 1. 0.9 by default. Can be
     //   overwritten when calling {JpegCamera#capture capture}. _Cannot_ be
@@ -281,6 +283,7 @@ var JpegCameraBase = function () {
         return null;
       },
 
+      resolution: 3840,
       quality: 0.9,
       shutter: true,
       mirror: false,
@@ -514,8 +517,6 @@ var JpegCameraBase = function () {
       this.videoWidth = videoWidth;
       this.videoHeight = videoHeight;
 
-      this.debug('Camera resolution ' + this.videoWidth + 'x' + this.videoHeight + 'px');
-
       // XXX Since this method is called from inside the Flash object, we need to
       // return control to make flash object usable again.
       var that = this;
@@ -688,19 +689,13 @@ var JpegCamera = function JpegCamera(container, options) {
     options.onInit(html5Init());
   },
   /* failure */function () {
-    if (options.dontCheckFlash) {
-      /* skip checking for flash and just run it */
+    _jpeg_camera_flash2.default.engineCheck(
+    /* success */function () {
       options.onInit(flashInit());
-    } else {
-      /* do check for flash in correct version */
-      _jpeg_camera_flash2.default.engineCheck(
-      /* success */function () {
-        options.onInit(flashInit());
-      },
-      /* failure */function () {
-        if (options.onError) options.onError(initError());
-      });
-    }
+    },
+    /* failure */function () {
+      if (options.onError) options.onError(initError());
+    });
   });
 };
 
@@ -843,64 +838,26 @@ var JpegCameraHtml5 = function (_JpegCameraBase) {
 
         return _this2.waitForVideoReady();
       };
-      var failure = function failure(err) {
-        throw new _errors.WebcamError(_errors.WebcamErrors.UNKNOWN_ERROR, err);
-      };
 
-      var resolutionsToCheck = [[3840, 2160], [1920, 1080], [1600, 1200], [1280, 720], [960, 720], [800, 600], [640, 480], [640, 360]];
-
-      var resolutionFinder = function resolutionFinder(resolutions) {
-        var res = resolutions.shift();
-        _this2.tryResolution(res[0], res[1], function (stream) {
-          if (!_this2.stream) {
-            success(stream);
+      navigator.mediaDevices.getUserMedia({
+        video: {
+          width: {
+            min: 640,
+            ideal: this.options.resolution
           }
-        }, function () {
-          if (resolutions.length !== 0) {
-            resolutionFinder(resolutions);
-          } else {
-            failure('Could not find suitable webcam resolution.');
-          }
-        });
-      };
-
-      try {
-        resolutionFinder(resolutionsToCheck);
-      } catch (error) {
-        this.message.innerHTML = '';
-        throw new _errors.WebcamError(_errors.WebcamErrors.GET_MEDIA_FAILED_INIT, error);
-      }
-    }
-  }, {
-    key: 'tryResolution',
-    value: function tryResolution(width, height, success, failure) {
-      // eslint-disable-next-line no-console
-      console.log('Webcam trying ' + width + 'x' + height);
-      if (navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { exact: width },
-            height: { exact: height }
-          },
-          audio: false
-        }).then(function (stream) {
+        },
+        audio: false
+      }).then(function (stream) {
+        if (!_this2.stream) {
+          var tracks = stream.getVideoTracks();
+          var settings = tracks[0].getSettings();
+          _this2.debug('Camera resolution ' + settings.width + 'x' + settings.height + 'px');
           success(stream);
-        }).catch(function (err) {
-          failure(err);
-        });
-      } else {
-        navigator.getUserMedia({
-          video: {
-            mandatory: {
-              minWidth: width,
-              minHeight: height,
-              maxWidth: width,
-              maxHeight: height
-            }
-          },
-          audio: false
-        }, success.bind(this), failure.bind(this));
-      }
+        }
+      }).catch(function (error) {
+        _this2.message.innerHTML = '';
+        throw new _errors.WebcamError(_errors.WebcamErrors.GET_MEDIA_FAILED_INIT, error);
+      });
     }
   }, {
     key: 'resizePreview',
@@ -1156,17 +1113,17 @@ JpegCameraHtml5.engineCheck = function (success, failure) {
     failure('JpegCamera: Canvas-to-Blob is not loaded');
   }
   try {
-    if (navigator.mediaDevices.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) {
-        success(stream);
-      }).catch(function (err) {
-        failure(err);
-      });
-    } else {
-      navigator.getUserMedia({ video: true }, success, failure);
-    }
+    navigator.mediaDevices.enumerateDevices().then(function (devices) {
+      if (devices) {
+        success();
+      } else {
+        failure();
+      }
+    }).catch(function () {
+      failure();
+    });
   } catch (err) {
-    failure('getUserMedia could not be initialised.', err);
+    failure();
   }
 };
 
@@ -1714,7 +1671,7 @@ var JpegCameraFlash = function (_JpegCameraBase) {
       this.container.appendChild(containerToBeReplaced);
 
       // eslint-disable-next-line no-undef
-      swfobject.embedSWF(this.options.swfUrl, containerToBeReplaced.id, this.viewWidth, this.viewHeight, this.options.dontCheckFlash ? '0' : '9', null, flashvars, params, attributes, callback);
+      swfobject.embedSWF(this.options.swfUrl, containerToBeReplaced.id, this.viewWidth, this.viewHeight, '0', null, flashvars, params, attributes, callback);
     }
   }, {
     key: 'waitForVideoReady',
@@ -1874,9 +1831,10 @@ JpegCameraFlash.engineCheck = function (success, failure) {
   if (!window.swfobject) {
     failure('JpegCamera: SWFObject is not loaded.');
   }
-  if (!window.swfobject.hasFlashPlayerVersion('9')) {
-    failure('No Flash in version 9 available.');
-  }
+  // TODO disabled until I figure out how to detect flash cross-browser way
+  // if (!window.swfobject.hasFlashPlayerVersion('9')) {
+  //   failure('No Flash in version 9 available.');
+  // }
   success();
 };
 

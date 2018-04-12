@@ -100,7 +100,7 @@ package {
         shutterSound.load(new URLRequest(flashvars.shutter_url));
       }
 
-      initCamera();
+      initCamera(flashvars.resolution);
 
       ExternalInterface.addCallback("_play_shutter", playShutter);
       ExternalInterface.addCallback("_capture", capture);
@@ -206,7 +206,7 @@ package {
     // Private methods
     //
 
-    private function initCamera():void {
+    private function initCamera(resolution:Number):void {
       for (var i:uint = 0, len:uint = Camera.names.length; i < len; i++) {
         debug("Found camera \"" + Camera.names[i] + "\"");
       }
@@ -230,7 +230,12 @@ package {
       }
 
       camera.setMotionLevel(100); // (may help reduce CPU usage)
-      camera.setMode(640, 480, 30);
+
+      if (resolution) {
+        camera.setMode(resolution, resolution, 30);
+      } else {
+        camera.setMode(640, 480, 30);
+      }
 
       camera.addEventListener(StatusEvent.STATUS, cameraStatusChanged);
 

@@ -30,16 +30,10 @@ const JpegCamera = (container, options) => {
   JpegCameraHtml5.engineCheck(
     /* success */ () => { options.onInit(html5Init()); },
     /* failure */ () => {
-      if (options.dontCheckFlash) {
-        /* skip checking for flash and just run it */
-        options.onInit(flashInit());
-      } else {
-        /* do check for flash in correct version */
-        JpegCameraFlash.engineCheck(
-          /* success */ () => { options.onInit(flashInit()); },
-          /* failure */ () => { if (options.onError) options.onError(initError()); },
-        );
-      }
+      JpegCameraFlash.engineCheck(
+        /* success */ () => { options.onInit(flashInit()); },
+        /* failure */ () => { if (options.onError) options.onError(initError()); },
+      );
     },
   );
 };

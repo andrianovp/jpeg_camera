@@ -16,6 +16,7 @@ The idea is based on a similar JpegCam library which was Flash only. Beside work
 
 - Works natively in Chrome, Firefox, Safari, Opera and with a Flash plugin in all other
   browsers.
+- Configurable resolution to try to initialize (by defaults it is asking for 4K and gets the closest possible)
 - You can get snapshots for display outside the camera container in browsers
   that support `canvas` element - even when using Flash fallback.
 - Makes sure the camera is really ready by checking stream's color standard
@@ -26,7 +27,7 @@ The idea is based on a similar JpegCam library which was Flash only. Beside work
 - [Canvas-to-Blob](https://github.com/blueimp/JavaScript-Canvas-to-Blob) polyfill for the standard JavaScript `canvas.toBlob` method.
 - [SWFObject](http://code.google.com/p/swfobject/) for embedding the Flash-based fallback.
 
-These scripts are *not* packages with jpeg_camera.js module.
+These scripts are *not* packaged with jpeg_camera.js module.
 
 ## Usage
 
@@ -41,10 +42,16 @@ import 'script-loader!jpeg-camera-es6/lib/canvas-to-blob.min.js';
 import JpegCamera from 'jpeg-camera-es6';
 ```
 
-Of course your webpack needs to know how to handle the .swf file and the script-loader.
+Of course your webpack needs to know how to handle the .swf file and you need script-loader package installed.
 
 The example usage:
 ```
+import JpegCameraSwf from 'jpeg-camera-es6/lib/jpeg_camera.swf';
+import 'script-loader!jpeg-camera-es6/lib/swfobject.min.js';
+import 'script-loader!jpeg-camera-es6/lib/canvas-to-blob.min.js';
+
+import JpegCamera from 'jpeg-camera-es6';
+
 const theWebcam = null;
 const theContainer = document.getElementById('the-webcam-container-id')
 
@@ -76,10 +83,6 @@ config options and methods. There's plenty of docblocks in there to read.
 
 To use Flash fallback your camera container must be at least 215 pixels wide and
 138 pixels tall. This is the minimum to display privacy settings dialog.
-
-Current stable versions of Firefox and Opera support getUserMedia, but do not
-support Web Audio API. I have decided against loading a Flash object in
-these browsers so JpegCamera will be silent.
 
 The Flash will display a security dialog in older browsers (e.g. IE 11), so remember *not to cover*
 the middle of the container with any other element (e.g. transparent div with some message or something).
