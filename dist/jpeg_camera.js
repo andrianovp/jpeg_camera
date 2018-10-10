@@ -7,7 +7,7 @@
 		exports["JpegCamera"] = factory();
 	else
 		root["JpegCamera"] = factory();
-})(this, function() {
+})(typeof self !== 'undefined' ? self : this, function() {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -80,7 +80,25 @@ return /******/ (function(modules) { // webpackBootstrap
 "use strict";
 
 
-module.exports = function (self) {
+module.exports = function (self, options) {
+	options = Object.assign({}, options);
+
+	var filter = function filter(key) {
+		var match = function match(pattern) {
+			return typeof pattern === 'string' ? key === pattern : pattern.test(key);
+		};
+
+		if (options.include) {
+			return options.include.some(match);
+		}
+
+		if (options.exclude) {
+			return !options.exclude.some(match);
+		}
+
+		return true;
+	};
+
 	var _iteratorNormalCompletion = true;
 	var _didIteratorError = false;
 	var _iteratorError = undefined;
@@ -91,7 +109,7 @@ module.exports = function (self) {
 
 			var val = self[key];
 
-			if (key !== 'constructor' && typeof val === 'function') {
+			if (key !== 'constructor' && typeof val === 'function' && filter(key)) {
 				self[key] = val.bind(self);
 			}
 		}
@@ -111,6 +129,14 @@ module.exports = function (self) {
 	}
 
 	return self;
+};
+
+var excludedReactMethods = ['componentWillMount', 'render', 'componentDidMount', 'componentWillReceiveProps', 'shouldComponentUpdate', 'componentWillUpdate', 'componentDidUpdate', 'componentWillUnmount', 'componentDidCatch', 'setState', 'forceUpdate'];
+
+module.exports.react = function (self, options) {
+	options = Object.assign({}, options);
+	options.exclude = (options.exclude || []).concat(excludedReactMethods);
+	return module.exports(self, options);
 };
 
 /***/ }),
@@ -289,7 +315,8 @@ var JpegCameraBase = function () {
       mirror: false,
       previewMirror: true,
       scale: 1.0,
-      accessMessage: 'Please allow camera access when prompted by the browser.<br><br>' + 'Look for camera icon around your address bar.'
+      accessMessage: 'Please allow camera access when prompted by the browser.<br><br>' + 'Look for camera icon around your address bar.',
+      containerSize: null
     };
     this.isReady = false;
     this.errorOccured = false;
@@ -305,13 +332,18 @@ var JpegCameraBase = function () {
       container = document.getElementById(container.replace('#', ''));
     }
 
-    if (!container || !container.offsetWidth) {
+    var normalizedOptions = Object.assign({}, this.defaultOptions, options);
+
+    if (!container || !normalizedOptions.containerSize && !container.offsetWidth) {
       throw new Error('JpegCamera: invalid container');
     }
 
+    var containerWidth = normalizedOptions.containerSize && normalizedOptions.containerSize.width ? normalizedOptions.containerSize.width : container.offsetWidth;
+    var containerHeight = normalizedOptions.containerSize && normalizedOptions.containerSize.height ? normalizedOptions.containerSize.height : container.offsetWidth;
+
     container.innerHTML = '';
-    this.viewWidth = parseInt(container.offsetWidth, 10);
-    this.viewHeight = parseInt(container.offsetHeight, 10);
+    this.viewWidth = parseInt(containerWidth, 10);
+    this.viewHeight = parseInt(containerHeight, 10);
 
     this.container = document.createElement('div');
     this.container.style.width = '100%';
@@ -320,7 +352,7 @@ var JpegCameraBase = function () {
 
     container.appendChild(this.container);
 
-    this.options = Object.assign({}, this.defaultOptions, options);
+    this.options = normalizedOptions;
   }
 
   _createClass(JpegCameraBase, [{

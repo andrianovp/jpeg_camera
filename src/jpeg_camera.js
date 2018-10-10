@@ -41,7 +41,8 @@ export default class JpegCameraBase {
     scale: 1.0,
     accessMessage:
       'Please allow camera access when prompted by the browser.<br><br>' +
-      'Look for camera icon around your address bar.'
+      'Look for camera icon around your address bar.',
+    containerSize: null
   };
 
   // @nodoc
@@ -148,13 +149,22 @@ export default class JpegCameraBase {
       container = document.getElementById(container.replace('#', ''));
     }
 
-    if (!container || !container.offsetWidth) {
+    const normalizedOptions = Object.assign({}, this.defaultOptions, options);
+
+    if (!container || (!normalizedOptions.containerSize && !container.offsetWidth)) {
       throw new Error('JpegCamera: invalid container');
     }
 
+    const containerWidth = normalizedOptions.containerSize &&
+      normalizedOptions.containerSize.width ? normalizedOptions.containerSize.width :
+      container.offsetWidth;
+    const containerHeight = normalizedOptions.containerSize &&
+      normalizedOptions.containerSize.height ? normalizedOptions.containerSize.height :
+      container.offsetWidth;
+
     container.innerHTML = '';
-    this.viewWidth = parseInt(container.offsetWidth, 10);
-    this.viewHeight = parseInt(container.offsetHeight, 10);
+    this.viewWidth = parseInt(containerWidth, 10);
+    this.viewHeight = parseInt(containerHeight, 10);
 
     this.container = document.createElement('div');
     this.container.style.width = '100%';
@@ -163,7 +173,7 @@ export default class JpegCameraBase {
 
     container.appendChild(this.container);
 
-    this.options = Object.assign({}, this.defaultOptions, options);
+    this.options = normalizedOptions;
   }
 
   resize(containerWidth, containerHeight) {

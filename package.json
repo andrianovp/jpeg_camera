@@ -7,6 +7,9 @@
     "type": "git",
     "url": "https://github.com/CurrencyFair/jpeg_camera"
   },
+  "scripts": {
+    "build": "webpack --config=webpack.config.js"
+  },
   "main": "dist/jpeg_camera.js",
   "module": "dist/jpeg_camera.js",
   "dependencies": {
